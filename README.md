@@ -7,6 +7,10 @@ The page shows the current expression, confidence, processing time and recent
 predictions. It processes the largest face in each frame. Session counts stay
 in the browser and disappear on refresh.
 
+## Project team
+
+Developed jointly by **[Chitrakant Verma](https://github.com/chitrakantverma)** and **[Abhishek Yadav](https://github.com/abhi-yadv)** as a fifth-semester minor project.
+
 ## Run locally
 
 Use Python 3.12. The bundled model also works with Python 3.9–3.11.
