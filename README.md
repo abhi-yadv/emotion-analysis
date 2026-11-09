@@ -1,84 +1,64 @@
-# Emotion Analysis
+# Facial Expression Classification Demo
 
-A webcam app that detects a face and classifies its expression with a CNN.
-Built with Python, Flask, OpenCV and plain HTML, CSS and JavaScript.
+A webcam-based computer vision project built by **Abhishek Yadav** and **Chitrakant Verma** as a fifth-semester minor project. It detects the largest face in a frame and displays a model-predicted facial expression label, confidence score, processing time and recent predictions. These labels describe visible patterns; they do not establish how a person feels.
 
-The page shows the current expression, confidence, processing time and recent
-predictions. It processes the largest face in each frame. Session counts stay
-in the browser and disappear on refresh.
+**Stack:** Python · Flask · OpenCV · ONNX · HTML/CSS/JavaScript  
+**Inspect:** [web app](app.py) · [training workflow](train.py) · [held-out evaluation](evaluate.py) · [tests](tests/)
 
-## Project team
+## What we built
 
-Developed jointly by **[Chitrakant Verma](https://github.com/chitrakantverma)** and **[Abhishek Yadav](https://github.com/abhi-yadv)** as a fifth-semester minor project.
+- A browser interface that captures webcam frames with permission and sends one JPEG frame at a time to the Flask prediction endpoint.
+- Face detection and expression classification for the largest detected face. The UI shows confidence, processing time and a browser-only recent-prediction history.
+- Input checks for frame type, dimensions and size, plus error handling and privacy-related response headers.
+- A separate six-class FER-2013 CNN training workflow and an evaluation script that writes accuracy, macro F1, per-class metrics and a confusion matrix on the held-out PrivateTest split.
 
-## Run locally
+## Model provenance and results
 
-Use Python 3.12. The bundled model also works with Python 3.9–3.11.
+The runnable app uses the **pretrained FER+ ONNX model** from the [ONNX Model Zoo](https://github.com/onnx/models/tree/main/validated/vision/body_analysis/emotion_ferplus). We did not train that pretrained model. [Model attribution](models/) is included in the repository; [download_model.py](download_model.py) checks the weight file against a SHA-256 manifest.
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-python download_model.py
-python app.py
-```
+The separate training script can train a six-class CNN on a locally obtained FER-2013 CSV. It uses Training for fitting, PublicTest for validation and PrivateTest for final evaluation. **No accuracy or cross-dataset score is claimed here:** this repository does not include a reproducible completed run or its metrics. Six-class results are not directly comparable with seven- or eight-class benchmarks.
 
-Open http://127.0.0.1:5000 and allow camera access. Keep the terminal open.
-On Windows, use `.venv\Scripts\python.exe` to install packages and run `app.py`.
+## Run the app locally
 
-## Model
+Use Python 3.12. From the repository root on Windows PowerShell:
 
-The app uses the pretrained FER+ model from the
-[ONNX Model Zoo](https://github.com/onnx/models/tree/main/validated/vision/body_analysis/emotion_ferplus).
-Its eight outputs are kept intact. The interface records six selected classes:
-angry, fearful, happy, sad, surprised and neutral. Disgust and contempt appear
-as “Other expression” and are excluded from the six class counts.
+~~~powershell
+py -3.12 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe download_model.py
+.venv\Scripts\python.exe app.py
+~~~
 
-The model uses 64×64 grayscale images. OpenCV handles face detection and ONNX
-inference. Source, label order and licence notices are in `models/`.
-`download_model.py` downloads the weights and verifies their SHA256 checksum.
+Open http://127.0.0.1:5000 and grant camera access. On macOS/Linux, create a virtual environment with python3, activate it, and run the same three Python commands.
 
-## Train a six-class model
+## Reproduce training and evaluation
 
-Obtain the original FER-2013 CSV with `emotion`, `pixels` and `Usage` columns.
-The dataset is not included in this repository.
+Obtain the original FER-2013 CSV with emotion, pixels and Usage columns; it is not distributed here. Then run:
 
-```bash
+~~~bash
 python -m pip install -r requirements-training.txt
 python train.py --csv data/fer2013.csv --epochs 30
 python evaluate.py --csv data/fer2013.csv
-```
+~~~
 
-Training uses the official Training and PublicTest splits. Evaluation uses
-PrivateTest. The six-class model excludes disgust. Restart the app after
-training; it loads `models/emotion_model.keras` and its matching JSON metadata
-when both are available. The Colab workflow is in `notebooks/`.
+The scripts write model metadata and training curves, followed by an evaluation JSON report, per-class metrics and a confusion matrix. Report numbers only after running the scripts on the stated dataset and preserving the outputs and dataset provenance.
 
-## Deploy on Vercel
+## Research context and limitations
 
-Import this repository in Vercel. Keep the project root at the repository root
-and leave the build command and output directory at their Flask defaults.
-The Python version is pinned to 3.12; `app.py` exports the Flask application.
-Only `requirements.txt` is needed for the hosted model. Training stays local.
-The build command downloads and verifies the model before it is bundled with
-the function; large model weights are kept out of Git history.
+Abhishek's NIT Rourkela research involved CNN-based **thermal** facial-expression work and cross-dataset evaluation. **This repository is a separate visible-light webcam project; it does not contain the NIT thermal dataset, model, code or research results.**
 
-Vercel serves the files in `public/static/` through its CDN. The server accepts
-the deployment, branch and production hostnames supplied by Vercel. For a
-custom domain, set `APP_HOST` to its hostname and redeploy.
+A confidence score is not a measure of accuracy or a reliable reading of emotion. Lighting, pose, camera quality and dataset shift can change outputs. Do not use this demo for hiring, healthcare, identity, safety or other consequential decisions.
 
-## Data handling
+During local use, frames are processed on the same computer. On a hosted deployment, frames are transmitted to that server for prediction. The app does not save frames or session history to disk, though hosting logs may retain request metadata.
 
-Camera access requires HTTPS or localhost. During local use, frames are sent
-to the server on the same computer. On the hosted version, frames are sent
-to the Vercel server for prediction. The application does not save frames or
-session history to disk. Hosting access logs can still contain request metadata.
+## Checks and team
 
-Expression labels describe visible facial patterns. Model confidence is not
-an accuracy measurement or a reliable reading of someone's feelings.
+Run the route and input-handling checks with:
 
-## Checks
-
-```bash
+~~~bash
 python -m unittest discover -s tests -v
-```
+~~~
+
+These checks do not establish model accuracy. Webcam behaviour should also be checked manually on the device running the app.
+
+Developed jointly by [Chitrakant Verma](https://github.com/chitrakantverma) and [Abhishek Yadav](https://github.com/abhi-yadv). The pretrained FER+ model is credited above.
